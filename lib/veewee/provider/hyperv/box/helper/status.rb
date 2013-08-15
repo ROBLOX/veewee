@@ -19,8 +19,8 @@ module Veewee
               result = powershell_exec "$obj = Get-VM | Select -Property VMName ; Foreach ($o in $obj) {if ($o.VMName -eq '#{name}') {'true' ; exit}} 'false'"
               status = (result.stdout.chomp == 'true') ? true : false
             when :running
-              result = powershell_exec "Get-VM #{name} | Select -Property State | Format-List"
-              status = result.stdout.split(/\n/).grep(/State/)[0].include? 'Running'
+              result = powershell_exec "(Get-VM #{name}).State | Format-List"
+              status = (result.stdout.chomp == 'Running') ? true : false
             else
               env.ui.info "Unsupported check type #{type} specified"
               status = false
