@@ -5,7 +5,7 @@ module Veewee
 
         def destroy(option={})
           env.ui.info "Destroying VM [#{name}] and removing all drives"
-          self.powershell_exec "Get-VM #{name} ^| ^%{Stop-VM -VM $_ -Force ; Remove-VM -VM $_ -Force ; $p = $_.Path ; $v = $_.VMName ; Remove-Item -Recurse -Path $p\\$v}"#-Recurse -Force
+          self.powershell_exec "Get-VM #{name} | ^%{Stop-VM -VM $_ -Force ; Remove-VM -VM $_ -Force ; $p = $_.Path ; $v = $_.VMName ; Remove-Item -Recurse -Path $p\\$v}"#-Recurse -Force
         end
 
       end
