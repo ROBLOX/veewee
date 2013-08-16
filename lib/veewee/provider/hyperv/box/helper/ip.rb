@@ -17,6 +17,13 @@ module Veewee
           end
         end
 
+        # Get the mac address of the box
+        def get_mac_address
+          results = powershell_exec "(Get-VMNetworkAdapter -VMName #{name}).MacAddress | Format-List"
+          mac = results.stdout.chomp
+          return mac
+        end
+
       end
     end
   end
