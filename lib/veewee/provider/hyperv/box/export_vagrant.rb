@@ -17,28 +17,12 @@ module Veewee
 
           # Check if box already exists
           unless self.exists?
-            ui.info "#{name} is not found, maybe you need to build it first?"
+            ui.info "VM #{name} does not exist"
             exit
           end
 
-          if File.exists?("#{name}.box")
-            if options["force"]
-              env.logger.debug("#{name}.box exists, but --force was provided")
-              env.logger.debug("removing #{name}.box first")
-              FileUtils.rm("#{name}.box")
-              env.logger.debug("#{name}.box removed")
-            else
-              raise Veewee::Error, "export file #{name}.box already exists. Use --force option to overwrite."
-            end
-          end
-
-
           # We need to shutdown first
           if self.running?
-            ui.info "Vagrant requires the box to be shutdown, before it can export"
-            ui.info "Sudo also needs to work for user #{definition.ssh_user}"
-            ui.info "Performing a clean shutdown now."
-
             self.halt
 
             #Wait for state poweroff
@@ -50,25 +34,27 @@ module Veewee
             ui.info "Machine #{name} is powered off cleanly"
           end
 
+          boxdir = "E:\\veewee\\export\\#{name}" #TODO: This is a hack to work around HyperV network access
+          powershell_exec "if (Test-Path -Path #{boxdir}) {exit} ; New-Item -Path #{boxdir} -Itemtype directory"
+
           #Vagrant requires a relative path for output of boxes
-
-          #4.0.x. not using boxes as a subdir
-          boxdir=Pathname.new(Dir.pwd)
-
-          full_path=File.join(boxdir,name+".box")
+          full_path=File.join(boxdir,name+".box").gsub('/', '\\')
           path1=Pathname.new(full_path)
           path2=Pathname.new(Dir.pwd)
-          box_path=File.expand_path(path1.relative_path_from(path2).to_s)
+          #box_path=File.expand_path(path1.relative_path_from(path2).to_s)
+          box_path=full_path
 
-          if File.exists?("#{box_path}")
-            raise Veewee::Error, "box #{name}.box already exists"
-          end
+          result = powershell_exec "Test-Path -Path #{box_path}"
+          raise Veewee::Error, "box #{name}.box already exists, provide --force to override" if result.stdout == true && options['force'].nil?
 
           # Create temp directory
-          current_dir = FileUtils.pwd
           ui.info "Creating a temporary directory for export"
-          tmp_dir = Dir.mktmpdir
+
+          tmp_dir = File.join(boxdir,'temp').gsub('/', '\\')
+          powershell_exec "if (Test-Path -Path #{tmp_dir}) {exit} ; New-Item -Path #{tmp_dir} -Itemtype directory"
+
           env.logger.debug("Create temporary directory for export #{tmp_dir}")
+          env.ui.info("Create temporary directory for export #{tmp_dir}")
 
           begin
 
@@ -91,14 +77,14 @@ module Veewee
               vars_binding = vars.send(:get_binding)
               result = erb.result(vars_binding)
               ui.info("Creating Vagrantfile")
-              vagrant_path = File.join(tmp_dir,'Vagrantfile')
+              vagrant_path = "\\\\#{definition.hyperv_host}\\veewee\\export\\#{name}\\temp\\Vagrantfile"
               env.logger.debug("Path: #{vagrant_path}")
               env.logger.debug(result)
               File.open(vagrant_path,'w') {|f| f.write(result) }
             else
               f = options["vagrantfile"]
               env.logger.debug("Including vagrantfile: #{f}")
-              FileUtils.cp(f,File.join(tmp_dir,"Vagrantfile"))
+              FileUtils.cp(f,"\\\\#{definition.hyperv_host}\\veewee\\export\\#{name}\\temp\\Vagrantfile")
             end
 
             # Handling other includes
@@ -109,34 +95,11 @@ module Veewee
               end
             end
 
-            if definition.disk_format.downcase == "vdi"
-              place=get_vbox_home
-              1.upto(definition.disk_count.to_i) do |f|
-                filepath = "#{File.join(place,name,name+"#{f}."+definition.disk_format.downcase)}"
-                filepath = filepath.gsub(/[\/]/, '\\')
-                env.ui.info "Compacting harddrive #{filepath}"
-                command = "#{@vboxcmd} modifyhd \"#{filepath}\" --compact"
-                env.logger.debug("Command: #{command}")
-                shell_exec("#{command}")
-              end
-            end
-
             ui.info "Exporting the box"
-            command = "#{@vboxcmd} export #{name} --output #{File.join(tmp_dir,'box.ovf')}"
-            env.logger.debug("Command: #{command}")
-            shell_exec(command, {:mute => false})
+            powershell_exec("Export-VM -Name #{name} -Path #{tmp_dir}")
 
             ui.info "Packaging the box"
-            FileUtils.cd(tmp_dir)
-            is_windows = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
-            if is_windows
-              box_path = box_path.gsub(/[\/]/, '\\')
-              command = "powershell \"dir . | Write-Tar -output #{box_path}\""
-            else
-              command = "tar -cvf '#{box_path}' ."
-            end
-            env.logger.debug(command)
-            shell_exec (command)
+            powershell_exec "Get-ChildItem -Path #{tmp_dir} -Recurse | Write-Tar -OutputPath #{box_path}"
 
           rescue Errno::ENOENT => ex
             raise Veewee::Error, "#{ex}"
@@ -146,9 +109,7 @@ module Veewee
             # Remove temporary directory
             ui.info "Cleaning up temporary directory"
             env.logger.debug("Removing temporary dir #{tmp_dir}")
-            FileUtils.rm_rf(tmp_dir)
-
-            FileUtils.cd(current_dir)
+            powershell_exec "Remove-Item -Path #{tmp_dir} -Recurse" unless options['debug']
           end
           ui.info ""
 
@@ -166,30 +127,7 @@ module Veewee
           ui.info "vagrant ssh"
         end
 
-        def get_mac_address
-          command = "#{@vboxcmd} showvminfo --details --machinereadable \"#{self.name}\""
-          shell_results = shell_exec("#{command}")
-          mac = shell_results.stdout.split(/\n/).grep(/^macaddress1/)[0].split('=')[1].split('"')[1]
-          env.logger.debug("mac address: #{mac}")
-          return mac
-        end
-
       end #Module
     end #Module
   end #Module
 end #Module
-
-
-#      #currently vagrant has a problem with the machine up, it calculates the wrong port to ssh to poweroff the system
-#      thebox.execute("shutdown -h now")
-#      thebox.wait_for_state("poweroff")
-
-
-#      Shellutil.execute("echo 'Vagrant::Config.run do |config|' > /tmp/Vagrantfile")
-#      Shellutil.execute("echo '   config.ssh.forwarded_port_key = \"ssh\"' >> /tmp/Vagrantfile")
-#      Shellutil.execute("echo '   config.raw.forward_port(\"ssh\",22,#{host_port})' >> /tmp/Vagrantfile")
-#      Shellutil.execute("echo 'end' >> /tmp/Vagrantfile")
-
-
-#vagrant export disables the machine
-#      thebox.ssh_enable_vmachine({:hostport => host_port , :guestport => 22} )
