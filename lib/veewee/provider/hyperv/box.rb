@@ -1,6 +1,7 @@
 require 'veewee/provider/core/box'
 
 require 'veewee/provider/hyperv/box/util/powershell'
+require 'veewee/provider/hyperv/box/util/scancode'
 #require 'veewee/provider/hyperv/box/util/vm'
 require 'veewee/provider/hyperv/box/build'
 require 'veewee/provider/hyperv/box/create'
@@ -23,7 +24,7 @@ require 'veewee/provider/hyperv/box/helper/status'
 require 'veewee/provider/hyperv/box/helper/storage'
 #require 'veewee/provider/hyperv/box/helper/version'
 #require 'veewee/provider/hyperv/box/helper/buildinfo'
-#require 'veewee/provider/hyperv/box/helper/console_type'
+require 'veewee/provider/hyperv/box/helper/console_type'
 require 'veewee/provider/hyperv/box/up'
 
 require 'whichr'
