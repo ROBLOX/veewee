@@ -25,7 +25,7 @@ module Veewee
             options=defaults.merge(options)
             result=ShellResult.new("","",-1)
             ui.info "Executing #{command}" unless options[:mute]
-            env.logger.debug "Command: \"#{command}\""
+            env.logger.debug "Command: [#{command}]"
             env.logger.debug "Output:"
             env.logger.debug "-------"
             escaped_command=command
