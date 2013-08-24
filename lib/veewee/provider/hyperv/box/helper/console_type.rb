@@ -1,5 +1,3 @@
-require 'veewee/provider/hyperv/box/util/scancode'
-
 module Veewee
   module Provider
     module Hyperv
@@ -15,10 +13,8 @@ module Veewee
           counter=0
           sequence.each { |s|
             counter=counter+1
-
             ui.info "Typing:[#{counter}]: #{s}"
-            keycodes = Scancode.string_to_keycode(s)
-
+            keycodes = Veewee::Provider::Hyperv::Util::Scancode.string_to_keycode(s)
             if keycodes.start_with?('0x')
               powershell_exec "$vmcs = Get-WmiObject -ComputerName #{definition.hyperv_host} -Namespace 'root\\virtualization' -Query 'SELECT * FROM MSVM_ComputerSystem WHERE ElementName like \\\"#{name}\\\" '; $vmkb = ($vmcs.getRelated('MSVM_Keyboard') | select-object) ; $cmd = $vmkb.TypeKey(#{keycodes})",{:remote => false}
             else

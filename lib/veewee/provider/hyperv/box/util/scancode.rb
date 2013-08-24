@@ -1,7 +1,7 @@
 module Veewee
   module Provider
     module Hyperv
-      module BoxCommand
+      module Util
 
         class Scancode
 
@@ -13,7 +13,7 @@ module Veewee
           @@special_keys['<Enter>'] = '0x0D'
           @@special_keys['<Tab>'] = '0x09'
 
-          def string_to_keycode(s)
+          def self.string_to_keycode(s)
             @@special_keys.keys.each { |key|
               return @@special_keys[key] if s.start_with?(key)
             }
