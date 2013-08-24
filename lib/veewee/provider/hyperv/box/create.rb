@@ -45,8 +45,8 @@ module Veewee
           end
 
           unless definition.floppy_files.nil?
-            self.create_floppy("virtualfloppy.vfd")
-            self.attach_floppy
+            self.create_floppy("#{name}.vfd")
+            self.attach_floppy("#{name}.vfd")
           end
 
           if definition.winrm_user && definition.winrm_password # prefer winrm
