@@ -43,15 +43,13 @@ module Veewee
           powershell_exec "Set-VMDvdDrive -VMName #{name} -ControllerNumber #{device_number} -ControllerLocation #{port} -Path $null"
         end
 
-        def attach_floppy
+        def attach_floppy(floppy = 'virtualfloppy.vfd')
           # Attach floppy to machine (the vfd extension is crucial to detect msdos type floppy)
-          local_file = File.join(definition.path,"virtualfloppy.vfd").gsub('/', '\\')
-          remote_file = File.join("\\\\",definition.hyperv_host,'veewee','virtualfloppy.vfd').gsub('/', '\\')
+          local_file = File.join(definition.path,"#{floppy}").gsub('/', '\\')
+          remote_file = File.join("\\\\",definition.hyperv_host,'veewee',"#{floppy}").gsub('/', '\\')
           env.ui.info "Copying VirtualFloppy file [#{local_file}] to HyperV Host"
-          result = powershell_exec "if (Test-Path -Path '#{remote_file}') {'true' ; exit} else {Copy-Item -Path '#{local_file}' -Destination '#{remote_file}'}",{:remote => false}
-          status = (result.stdout.chomp == 'true') ? true : false
-          env.ui.info "Remote file [#{remote_file}] already exists on HyperV Host and will be re-used" if status
-          remote_file = File.join("e:\\",'veewee','virtualfloppy.vfd').gsub('/', '\\')
+          powershell_exec "Copy-Item -Path '#{local_file}' -Destination '#{remote_file}'",{:remote => false}
+          remote_file = File.join("e:\\",'veewee',"#{floppy}").gsub('/', '\\')
           env.ui.info "Mounting VirutalFloppy: #{remote_file}"
           powershell_exec("Set-VMFloppyDiskDrive -VMName #{name} -Path '#{remote_file}'")
         end
