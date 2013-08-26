@@ -4,7 +4,7 @@ module Veewee
       module BoxCommand
 
         def host_ip_as_seen_by_guest
-          return defition.host_ip_as_seen_by_box if defition.host_ip_as_seen_by_box
+          return definition.host_ip_as_seen_by_box if definition.host_ip_as_seen_by_box
           return self.get_local_ip
         end
 
