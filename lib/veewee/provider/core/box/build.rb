@@ -88,9 +88,7 @@ module Veewee
             })
 
             # Type the boot sequence
-            Thread.new do
-              self.console_type(boot_sequence)
-            end
+            self.console_type(boot_sequence)
           end
           run_hook(:after_boot_sequence)
 
