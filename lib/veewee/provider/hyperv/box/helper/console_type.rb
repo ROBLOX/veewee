@@ -18,7 +18,7 @@ module Veewee
             if keycodes.start_with?('0x')
               powershell_exec "$vmcs = Get-WmiObject -ComputerName #{definition.hyperv_host} -Namespace 'root\\virtualization' -Query 'SELECT * FROM MSVM_ComputerSystem WHERE ElementName like \\\"#{name}\\\" '; $vmkb = ($vmcs.getRelated('MSVM_Keyboard') | select-object) ; $cmd = $vmkb.TypeKey(#{keycodes})",{:remote => false}
             else
-              powershell_exec "$vmcs = Get-WmiObject -ComputerName #{definition.hyperv_host} -Namespace 'root\\virtualization' -Query 'SELECT * FROM MSVM_ComputerSystem WHERE ElementName like \\\"#{name}\\\" '; $vmkb = ($vmcs.getRelated('MSVM_Keyboard') | select-object) ; $cmd = $vmkb.TypeText(#{keycodes})",{:remote => false}
+              powershell_exec "$vmcs = Get-WmiObject -ComputerName #{definition.hyperv_host} -Namespace 'root\\virtualization' -Query 'SELECT * FROM MSVM_ComputerSystem WHERE ElementName like \\\"#{name}\\\" '; $vmkb = ($vmcs.getRelated('MSVM_Keyboard') | select-object) ; $cmd = $vmkb.TypeText(\\\"#{keycodes}\\\")",{:remote => false}
             end
           }
         end
