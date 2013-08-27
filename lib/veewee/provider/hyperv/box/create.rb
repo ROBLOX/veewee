@@ -62,6 +62,8 @@ module Veewee
           self.detach_isofile(1,0)
           self.detach_isofile(1,1) if definition.skip_iso_transfer
           self.detach_floppy unless definition.floppy_files.nil?
+          self.remove_network_card('TempPrivate')
+          self.remove_network_card('TempPublic')
         end
 
       end
