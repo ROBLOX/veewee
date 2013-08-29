@@ -5,13 +5,6 @@ module Veewee
 
         def create(options={})
 
-          if definition.hyperv_network_name
-            # Create a virtual network switch
-            self.add_network_switch
-          else
-            raise Veewee::Error,'No network hyperv_network_name specified'
-          end
-
           # Attach ttyS0 to the VM for console output
           redirect_console=options[:redirectconsole]
           if redirect_console
@@ -62,8 +55,11 @@ module Veewee
           self.detach_isofile(1,0)
           self.detach_isofile(1,1) if definition.skip_iso_transfer
           self.detach_floppy unless definition.floppy_files.nil?
-          self.remove_network_card('TempPrivate')
-          self.remove_network_card('TempPublic')
+          if definition.hyperv_requires_legacy_network
+            self.remove_network_card('Legacy*')
+            self.add_network_card 'Private','Private'
+            self.add_network_card 'Public','Public'
+          end
         end
 
       end
