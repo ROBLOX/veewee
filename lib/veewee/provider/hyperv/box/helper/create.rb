@@ -25,26 +25,14 @@ module Veewee
           vhd_path = File.join(vm_path,"#{name}-0.#{definition.disk_format}").gsub('/', '\\').downcase
 
           # Create a new named VM instance on the HyperV server
-          env.ui.info "Creating VM [#{name}] #{definition.memory_size}MB - #{definition.cpu_count}CPU - #{hyperv_os_type_id(definition.os_type_id)}"
+          env.ui.info "Creating VM [#{name}] #{definition.memory_size}MB RAM - #{definition.cpu_count}CPU - #{definition.disk_size}MB HD - #{hyperv_os_type_id(definition.os_type_id)}"
           powershell_exec "New-VM -Name #{name} -MemoryStartupBytes #{definition.memory_size}MB -NewVHDSizeBytes #{definition.disk_size}MB -NewVHDPath '#{vhd_path}'"
 
-          #TODO: #setting video memory size
-          #command="#{@vboxcmd} modifyvm \"#{name}\" --vram #{definition.video_memory_size}"
-          #shell_exec("#{command}")
-
-          if ((definition.os_type_id).downcase).include? 'redhat'
-            env.ui.info "Adding a HyperV legacy network adapter for Linux kickstart to work"
-            add_network_card 'TempPrivate','Private',{:legacy => true}
-            add_network_card 'TempPublic','Public',{:legacy => true}
-          end
-
-          env.ui.info "Adding a network adapter named #{definition.hyperv_nic_name} on VirtualSwitch #{definition.hyperv_network_name}"
-          add_network_card 'Private','Private'
-          add_network_card 'Public','Public'
+          remove_network_card('Network Adapter') if definition.hyperv_requires_legacy_network
 
           # Setting bootorder
-          env.ui.info "Setting VMBios boot order 'IDE', 'CD', 'Floppy', 'LegacyNetworkAdapter'"
-          powershell_exec "Set-VMBios -VMName #{name} -StartupOrder @('IDE', 'CD', 'Floppy', 'LegacyNetworkAdapter')"
+          #env.ui.info "Setting VMBios boot order 'IDE', 'CD', 'Floppy', 'LegacyNetworkAdapter'"
+          #powershell_exec "Set-VMBios -VMName #{name} -StartupOrder @('IDE', 'CD', 'Floppy', 'LegacyNetworkAdapter')"
 
           dynamic_memory = nil
           smart_paging = nil
@@ -58,14 +46,23 @@ module Veewee
                 when 'smart_paging'
                   swp_path = File.join(vm_path,"#{name}.swp").gsub('/', '\\').downcase
                   smart_paging = vm_flag_value ? "-SmartPagingFilePath '#{swp_path}'" : nil
+                when /network[0-9]/
+                  add_network_switch(vm_flag_value[1])
+                  if definition.hyperv_requires_legacy_network
+                    env.ui.info "Adding a HyperV Legacy Network Adapter [Legacy#{vm_flag_value[0]}] on Virtual Switch [#{vm_flag_value[1]}]"
+                    add_network_card "Legacy#{vm_flag_value[0]}",vm_flag_value[1],{:legacy => true}
+                  else
+                    env.ui.info "Adding a HyperV Network Adapter #{vm_flag_value[0]}] on Virtual Switch [#{vm_flag_value[1]}]"
+                    add_network_card "#{vm_flag_value[0]}",vm_flag_value[1]
+                  end
                 else
                   env.ui.warn "Ignoring unsupported vm_flag [#{vm_flag}] with value [#{vm_flag_value}]"
               end
             end
           end
 
-          env.ui.info "Setting VM SnapshotFileLocation and other vm options"
-          powershell_exec "Set-VM -Name #{name} #{dynamic_memory} #{smart_paging} -SnapshotFileLocation '#{vm_path}\\snapshot\\'"
+          env.ui.info 'Setting VM SnapshotFileLocation and other vm options'
+          powershell_exec "Set-VM -Name #{name} #{dynamic_memory} #{smart_paging} -SnapshotFileLocation '#{vm_path}\\snapshot\\' -ProcessorCount #{definition.cpu_count}"
 
         end
       end
