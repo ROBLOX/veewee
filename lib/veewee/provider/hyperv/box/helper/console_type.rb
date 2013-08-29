@@ -8,8 +8,6 @@ module Veewee
         end
 
         def send_hyperv_sequence(sequence)
-          ui.info ""
-
           counter=0
           sequence.each { |s|
             counter=counter+1
@@ -21,10 +19,6 @@ module Veewee
               powershell_exec "$vmcs = Get-WmiObject -ComputerName #{definition.hyperv_host} -Namespace 'root\\virtualization' -Query 'SELECT * FROM MSVM_ComputerSystem WHERE ElementName like \\\"#{name}\\\" '; $vmkb = ($vmcs.getRelated('MSVM_Keyboard') | select-object) ; $cmd = $vmkb.TypeText(\\\"#{keycodes}\\\")",{:remote => false}
             end
           }
-
-          ui.info "Done typing."
-          ui.info ""
-
         end
 
       end #Module
