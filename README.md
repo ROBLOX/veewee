@@ -4,7 +4,8 @@
 
 Veewee is a tool for easily (and repeatedly) building custom [Vagrant](https://github.com/mitchellh/vagrant) base boxes, KVMs, and virtual machine images.
 
-NOTE: HyperV support is a WIP, currently only supports building a box with Windows as the guest OS.
+NOTE: HyperV support is a WIP, Windows based guest systems are 100% supported, Linux based guest systems are limited by the need to use legacy
+HyperV network drivers which after the build need to be swapped out on the guest OS.
 
 
 ## About Vagrant
