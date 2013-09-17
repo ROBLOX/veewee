@@ -52,7 +52,7 @@ module Veewee
                     env.ui.info "Adding a HyperV Legacy Network Adapter [Legacy#{vm_flag_value[0]}] on Virtual Switch [#{vm_flag_value[1]}]"
                     add_network_card "Legacy#{vm_flag_value[0]}",vm_flag_value[1],{:legacy => true}
                   else
-                    env.ui.info "Adding a HyperV Network Adapter #{vm_flag_value[0]}] on Virtual Switch [#{vm_flag_value[1]}]"
+                    env.ui.info "Adding a HyperV Network Adapter [#{vm_flag_value[0]}] on Virtual Switch [#{vm_flag_value[1]}]"
                     add_network_card "#{vm_flag_value[0]}",vm_flag_value[1]
                   end
                 else
