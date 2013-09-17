@@ -28,7 +28,7 @@ module Veewee
           env.ui.info "Creating VM [#{name}] #{definition.memory_size}MB RAM - #{definition.cpu_count}CPU - #{definition.disk_size}MB HD - #{hyperv_os_type_id(definition.os_type_id)}"
           powershell_exec "New-VM -Name #{name} -MemoryStartupBytes #{definition.memory_size}MB -NewVHDSizeBytes #{definition.disk_size}MB -NewVHDPath '#{vhd_path}'"
 
-          remove_network_card('Network Adapter') if definition.hyperv_requires_legacy_network
+          remove_network_card('Network Adapter')
 
           # Setting bootorder
           env.ui.info "Setting VMBios boot order 'IDE', 'CD', 'Floppy', 'LegacyNetworkAdapter'"
