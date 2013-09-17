@@ -31,8 +31,8 @@ module Veewee
           remove_network_card('Network Adapter') if definition.hyperv_requires_legacy_network
 
           # Setting bootorder
-          #env.ui.info "Setting VMBios boot order 'IDE', 'CD', 'Floppy', 'LegacyNetworkAdapter'"
-          #powershell_exec "Set-VMBios -VMName #{name} -StartupOrder @('IDE', 'CD', 'Floppy', 'LegacyNetworkAdapter')"
+          env.ui.info "Setting VMBios boot order 'IDE', 'CD', 'Floppy', 'LegacyNetworkAdapter'"
+          powershell_exec "Set-VMBios -VMName #{name} -StartupOrder @('IDE', 'CD', 'Floppy', 'LegacyNetworkAdapter')"
 
           dynamic_memory = nil
           smart_paging = nil
