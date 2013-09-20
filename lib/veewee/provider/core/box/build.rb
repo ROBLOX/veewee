@@ -144,14 +144,14 @@ module Veewee
           if (definition.winrm_user && definition.winrm_password)
             self.when_winrm_login_works(self.ip_address, winrm_options.merge(options)) do
               env.ui.info "Cleaning up Guest OS of installation ISO & floppy drive content"
-              self.cleanup
+              self.cleanup(options)
               sleep 5
               env.ui.info "You can now login to the box with:"
               env.ui.info winrm_command_string
             end
           else
             self.when_ssh_login_works(self.ip_address, ssh_options.merge(options)) do
-              self.cleanup
+              self.cleanup(options)
               sleep 5
               env.ui.info "You can now login to the box with:"
               env.ui.info ssh_command_string
@@ -164,6 +164,8 @@ module Veewee
             ui.info ".",{:new_line => false}
             sleep 1
           end
+
+          self.post_shutdown(options)
           ui.info ""
 
           return self
