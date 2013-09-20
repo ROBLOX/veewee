@@ -23,9 +23,8 @@ module Veewee
               isofile_ide_device_number = 1
           end
 
-          if definition.disk_count.to_i > 2
-            self.attach_disk(definition.controller_kind,disk_device_number)
-          end
+          self.create_disk
+          self.attach_disk(definition.controller_kind,disk_device_number)
 
           self.attach_isofile(isofile_ide_device_number,0,definition.iso_file)
 
@@ -55,6 +54,9 @@ module Veewee
           self.detach_isofile(1,0)
           self.detach_isofile(1,1) if definition.skip_iso_transfer
           self.detach_floppy unless definition.floppy_files.nil?
+        end
+
+        def post_shutdown(options={})
           if definition.hyperv_requires_legacy_network
             self.remove_network_card('Legacy*')
             self.add_network_card 'Private','Private'

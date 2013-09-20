@@ -16,19 +16,13 @@ module Veewee
             definition.memory_size = "512"
           end
 
-          unless definition.disk_format.downcase == 'vhdx'
-            env.ui.warn "HyperV only support the VHDX virtual hard drive format, changing from [#{definition.disk_format}]"
-            definition.disk_format = 'vhdx'
-          end
-
           vm_path = File.join(definition.hyperv_store_path,name).gsub('/', '\\').downcase
-          vhd_path = File.join(vm_path,"#{name}-0.#{definition.disk_format}").gsub('/', '\\').downcase
 
           # Create a new named VM instance on the HyperV server
           env.ui.info "Creating VM [#{name}] #{definition.memory_size}MB RAM - #{definition.cpu_count}CPU - #{definition.disk_size}MB HD - #{hyperv_os_type_id(definition.os_type_id)}"
-          powershell_exec "New-VM -Name #{name} -MemoryStartupBytes #{definition.memory_size}MB -NewVHDSizeBytes #{definition.disk_size}MB -NewVHDPath '#{vhd_path}'"
+          powershell_exec "New-VM -Name #{name} -MemoryStartupBytes #{definition.memory_size}MB"
 
-          remove_network_card('Network Adapter')
+          remove_network_card('Network Adapter') if definition.hyperv_requires_legacy_network
 
           # Setting bootorder
           env.ui.info "Setting VMBios boot order 'IDE', 'CD', 'Floppy', 'LegacyNetworkAdapter'"

@@ -8,7 +8,7 @@ module Veewee
         #  shell_exec("#{command}")
         #end
 
-        def add_controller(controller_kind = 'scsi')
+        def add_controller(controller_kind)
           case controller_kind
             when 'scsi'
               powershell_exec("Add-VMScsiController -VMName #{name}")
@@ -18,10 +18,24 @@ module Veewee
         end
 
         def create_disk
+          vm_path = File.join(definition.hyperv_store_path,name).gsub('/', '\\').downcase
           1.upto(definition.disk_count.to_i) do |f|
-            ui.info "Creating new harddrive of size #{definition.disk_size.to_i}MB, format #{definition.disk_format}, variant #{definition.disk_variant} "
-            command ="#{@vboxcmd} createhd --filename \"#{File.join(place,name,name+"#{f}."+definition.disk_format.downcase)}\" --size \"#{definition.disk_size.to_i}\" --format #{definition.disk_format.downcase} --variant #{definition.disk_variant.downcase}"
-            shell_exec("#{command}")
+            unless definition.disk_format.downcase == 'vhdx'
+              env.ui.warn "HyperV only support the VHDX virtual hard drive format, changing from [#{definition.disk_format}]"
+              definition.disk_format = 'vhdx'
+            end
+            env.ui.info "Creating new Dynamic HD #{definition.disk_size}MB - PhysicalSectorSizeBytes #{definition.disk_physical_sector_size} - LogicalSectorSizeBytes #{definition.disk_logical_sector_size}"
+            vhd_path = File.join(vm_path,"#{name}-#{f}.#{definition.disk_format}").gsub('/', '\\').downcase
+            powershell_exec "New-VHD -Path '#{vhd_path}' -SizeBytes #{definition.disk_size}MB -Dynamic" #" -PhysicalSectorSizeBytes #{definition.disk_physical_sector_size} -LogicalSectorSizeBytes #{definition.disk_logical_sector_size}"
+          end
+        end
+
+        def attach_disk(controller_kind, device_number)
+          vm_path = File.join(definition.hyperv_store_path,name).gsub('/', '\\').downcase
+          1.upto(definition.disk_count.to_i) do |f|
+            vhd_path = File.join(vm_path,"#{name}-#{f}.#{definition.disk_format}").gsub('/', '\\').downcase
+            env.ui.info "Attaching Dynamic HD #{vhd_path} to VM #{name} on #{controller_kind} controller # #{device_number}"
+            powershell_exec "Add-VMHardDiskDrive -VMName #{name} -Path '#{vhd_path}' -ControllerType #{controller_kind} "
           end
         end
 
